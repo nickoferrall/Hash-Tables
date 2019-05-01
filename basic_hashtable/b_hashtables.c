@@ -72,10 +72,11 @@ unsigned int hash(char *str, int max)
  ****/
 BasicHashTable *create_hash_table(int capacity)
 {
-  BasicHashTable *ht = calloc(1, sizeof(BasicHashTable));
+  BasicHashTable *ht = malloc(sizeof(BasicHashTable));
+  // since we're overriding values, we don't need calloc as it's slightly slower
 
   ht->capacity = capacity;
-  ht->storage = calloc(1, capacity * sizeof(char *));
+  ht->storage = calloc(capacity, sizeof(Pair *)); // create space for capacity (16) size of pair pointers as that's what we're storing in storage
 
   return ht;
 }
@@ -93,8 +94,20 @@ void hash_table_insert(BasicHashTable *ht, char *key, char *value)
   int returned_key = 0;
   returned_key = hash(key, ht->capacity);
 
-  // store the newly created pair into the storage pointer. Insert at the index of the hashed key
-  ht->storage[returned_key] = create_pair(key, value);
+  // check if there's already a pair at the index
+  // if there is, then we have a hash table collision
+  // we'll send an error, destroy the existing pair and add the new pair
+  if (ht->storage[returned_key] != NULL)
+  {
+    printf("Warning: a pair already exists at that index.");
+    destroy_pair(ht->storage[returned_key]);
+    ht->storage[returned_key] = create_pair(key, value);
+  }
+  // if there's no pair at the storage index, store the newly created pair at the storage pointer. Insert at the index of the hashed key
+  else
+  {
+    ht->storage[returned_key] = create_pair(key, value);
+  };
 }
 
 /****
@@ -108,8 +121,16 @@ void hash_table_remove(BasicHashTable *ht, char *key)
   int returned_key = 0;
   returned_key = hash(key, ht->capacity);
 
-  // remove the key from the storage pointer
-  free(ht->storage[returned_key]);
+  // if the pointer index is null, print error
+  if (ht->storage[returned_key] == NULL)
+  {
+    printf("Key not found.");
+  }
+  // if the pointer index is not null, destroy the pair
+  else if (ht->storage[returned_key] != NULL)
+  {
+    destroy_pair(ht->storage[returned_key]);
+  }
 }
 
 /****
@@ -123,16 +144,22 @@ char *hash_table_retrieve(BasicHashTable *ht, char *key)
   int returned_key = 0;
   returned_key = hash(key, ht->capacity);
 
-  // if the key exists, return the key. Otherwise, return NULL
-  int *my_pointer = ht->storage[returned_key];
-  if (strcmp(my_pointer[0], key) == 0)
+  // if the key doesn't exist, return error
+  if (ht->storage[returned_key] == NULL)
   {
-    return *my_pointer;
+    printf("Key not found.");
   }
+  // if the key of the index and the key are the same, return the index value
+  else if (strcmp(ht->storage[returned_key]->key, key) == 0)
+  {
+    return ht->storage[returned_key]->value;
+  }
+  // otherwise return null
   else
   {
     return NULL;
   }
+  return 0;
 }
 
 /****
@@ -142,16 +169,17 @@ char *hash_table_retrieve(BasicHashTable *ht, char *key)
  ****/
 void destroy_hash_table(BasicHashTable *ht)
 {
+  // go through the storage checking for values that aren't null and destroy them
   for (int i = 0; i < ht->capacity; i++)
   {
-    if (ht->storage[i] != 0)
+    if (ht->storage[i] != NULL)
     {
       destroy_pair(ht->storage[i]);
       break;
     }
   };
+  // we call free on pointers. We don't free capacity as it's not a pointer
   free(ht->storage);
-  // free(ht->capacity); // not able to remove capacity?
   free(ht);
 }
 
@@ -162,20 +190,20 @@ int main(void)
 
   hash_table_insert(ht, "line", "Here today...\n");
 
-  // printf("%s", hash_table_retrieve(ht, "line"));
+  printf("%s", hash_table_retrieve(ht, "line"));
 
-  // hash_table_remove(ht, "line");
+  hash_table_remove(ht, "line");
 
-  // if (hash_table_retrieve(ht, "line") == NULL)
-  // {
-  //   printf("...gone tomorrow. (success)\n");
-  // }
-  // else
-  // {
-  //   fprintf(stderr, "ERROR: STILL HERE\n");
-  // }
+  if (hash_table_retrieve(ht, "line") == NULL)
+  {
+    printf("...gone tomorrow. (success)\n");
+  }
+  else
+  {
+    fprintf(stderr, "ERROR: STILL HERE\n");
+  }
 
-  // destroy_hash_table(ht);
+  destroy_hash_table(ht);
 
   return 0;
 }
