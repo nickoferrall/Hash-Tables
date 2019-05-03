@@ -191,20 +191,6 @@ char *hash_table_retrieve(HashTable *ht, char *key)
   return NULL;
 }
 
-// method to count the number of buckets in storage that have pairs
-// int count_index(HashTable *ht)
-// {
-//   int count = 0;
-//   for (int i = 0; i < ht->capacity; i++)
-//   {
-//     if (ht->storage[i] != NULL)
-//     {
-//       count++;
-//     }
-//   }
-//   return count;
-// }
-
 /*
   Fill this in.
 
@@ -212,9 +198,6 @@ char *hash_table_retrieve(HashTable *ht, char *key)
  */
 void destroy_hash_table(HashTable *ht)
 {
-  // go through storage checking for values that aren't null and destroy them
-  // int count = 0;
-  // count = count_index(ht);
 
   for (int i = 0; i < ht->capacity; i++)
   {
